@@ -44,6 +44,11 @@ class vector:
         assert self.pt is v2.pt
         return vector(self.pt, self.q+v2.q)
     
+    def __sub__(self, v2):
+        assert isinstance(v2, vector)
+        assert self.pt is v2.pt
+        return vector(self.pt, self.q-v2.q)
+    
     def __mul__(self, val2): 
         return self.pt.man.inner_product(self, val2)
     
