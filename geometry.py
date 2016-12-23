@@ -23,12 +23,22 @@ class vector:
     def scale(self, lamb):
         return vector(self.pt, self.q.copy()*lamb)
     
-    def get_norm_sq(self):
+    def sq(self):
         return self*self
     
-    def get_norm(self):
-        return np.sqrt(self.get_norm_sq())
+    def get_time(self):
+        sq = -self.sq()
+        assert sq > 0
+        return np.sqrt(sq)
     
+    def get_length(self):
+        sq = self.sq()
+        assert sq > 0
+        return np.sqrt(sq)
+
+    def is_timelike(self):
+        return self.sq() < 0
+        
     def __add__(self, v2):
         assert isinstance(v2, vector)
         assert self.pt is v2.pt
@@ -48,8 +58,8 @@ def gram_schmidt(vs):
     us = []
     for v in vs:
         for u in us:
-            v = v - (v*u/u.get_norm_sq())*u
-        v = 1./(np.abs(v.get_norm())) * v
+            v = v - (v*u/u.sq())*u
+        v = 1./(np.sqrt(np.abs(v.sq()))) * v
         us.append(v)
         
 
@@ -185,9 +195,4 @@ class schwarzschild(manifold):
     
     def dif_scale(self, v, d=0.001):
         return v.scale(d/np.sqrt(np.inner(v.q, v.q)))
-    
-    def is_timelike(self, v):
-        return self.inner_product(v, v) < 0
-
-
         

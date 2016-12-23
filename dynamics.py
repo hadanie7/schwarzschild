@@ -12,14 +12,14 @@ class body:
         assert isinstance(P, vector)
         self.P = P
         self.man = P.pt.man
-        assert self.man.is_timelike(P)
+        assert P.is_timelike()
     
     def shoot(self, Ps):
         assert Ps.pt is self.P.pt
         self.P = self.P - Ps
         
-        assert self.man.is_timelike(Ps)
-        assert self.man.is_timelike(self.P)
+        assert Ps.is_timelike()
+        assert self.P.is_timelike()
         # TODO: check validity of the new P's
         return body(Ps)
     
@@ -32,9 +32,9 @@ class body:
             mode: determines how time is measured. accepted values: 'self', 'coord' """
         inc = self.man.dif_scale(self.P)
         if mode == 'self':
-            t_inc = -inc.get_norm()
+            t_inc = inc.get_time()
         elif mode == 'coord':
-            return inc.q[3]
+            t_inc = inc.q[3]
         else:
             raise Exception()
         
@@ -52,7 +52,7 @@ class foref:
         assert isinstance(vel, vector)
         self.vel = vel
         self.man = vel.pt.man
-        assert self.man.is_timelike(vel)
+        assert vel.is_timelike()
     
     
         
