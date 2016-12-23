@@ -70,7 +70,7 @@ class manifold:
         NotImplemented #virtual
     
     """ parallel transport of the vector v by a short increment dt """
-    def parallel_transport(self, v, dt):
+    def parallel_transport2(self, v, dt):
         assert isinstance(v, vector); assert isinstance(dt, vector)
         assert v.pt is dt.pt
         D = np.zeros(self.dim)
@@ -78,7 +78,7 @@ class manifold:
         for k in range(self.dim):
             for i in range(self.dim):
                 for j in range(self.dim):
-                    D[k] -= self.christ(v.pt, i, j, k) * dt.q[i] * v.q[j]
+                    D[k] -= self.christ2(v.pt, i, j, k) * dt.q[i] * v.q[j]
         npt = point(self, v.pt.q + dt.q)
         
         return vector(npt, v.q+D)        
@@ -91,10 +91,10 @@ class manifold:
         self.ftp += 1
 
     """ parallel transport of the vector v by a short increment dt """
-    def parallel_transport2(self, v, dt):
+    def parallel_transport(self, v, dt):
         assert isinstance(v, vector); assert isinstance(dt, vector)
         assert v.pt is dt.pt
-        D = -np.tensordot(self.christ2(v.pt), np.outer(v.q, dt.q))
+        D = -np.tensordot(self.christ(v.pt), np.outer(v.q, dt.q))
         npt = point(self, v.pt.q + dt.q)
         
         return vector(npt, v.q+D)
@@ -121,7 +121,7 @@ class schwarzschild(manifold):
         self.m = m
         self.rs = 2*G*m
         
-    def christ(self, pt, i, j, k):
+    def christ2(self, pt, i, j, k):
         r, th, ph, t = pt.q
         B = -(1-self.rs/r)
         A = -1/B
@@ -152,10 +152,10 @@ class schwarzschild(manifold):
                     return 1/np.tan(th)
         else:
             if (i==1 and j==4):
-                Bt/(2*B)
+                return Bt/(2*B)
         return 0
     
-    def christ2(self):
+    def christ(self, pt):
         r, th, ph, t = pt.q
         B = -(1-self.rs/r)
         A = -1/B
@@ -175,6 +175,8 @@ class schwarzschild(manifold):
         crs[2,1,2], crs[2,2,1] = (1/np.tan(th)  ,)*2
 
         crs[3,0,3], crs[3,3,0] = (Bt/(2*B)  ,)*2
+        
+        return crs
     
     def gram(self, pt):
         r, th, ph, t = pt.q
