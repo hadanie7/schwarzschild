@@ -37,7 +37,7 @@ class vector:
         return np.sqrt(sq)
 
     def is_timelike(self):
-        return self.sq() < 0
+        return self.sq() <= 0
         
     def __add__(self, v2):
         assert isinstance(v2, vector)

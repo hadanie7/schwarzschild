@@ -23,8 +23,30 @@ class body:
         # TODO: check validity of the new P's
         return body(Ps)
     
+    def shoot2(self, d, mass, energy):
+        m = self.get_mass()
+        ms = mass ; del mass
+        E = energy ; del energy
+        
+        P = self.P
+        v = self.get_velocity()
+        d = d - (d*P/P.sq())*P # just make sure d is a space vector in my frame
+        d = (1./d.sq()) * d # length 1
+        
+        # equations: [Eq(l*l-k*k, ms*ms), Eq(-k*k+(l+m)**2, (m-ms-E)**2)]
+        # ls = l**2, ks = k**2
+        ks = E * (E + 2*ms) * (E/m - 2) * (E/m - 2 + 2*ms/m)
+        l = E*E/(2*m) - E + E*ms/m - ms
+        
+        # Ps = k*d + l*v = k*d + l/m * m*v
+        Ps = np.sqrt(ks) * d  +  l*v
+        self.shoot(Ps)
+        
+        
+    
     def get_velocity(self):  
-        return self.P / self.get_inv_mass()
+        return self.P / self.get_mass()
+    
         
     def advance(self, time, mode = 'self'):
         """ advance by the given amount of time.
@@ -44,8 +66,8 @@ class body:
             self.P = self.man.parallel_transport(self.P, inc)
             self.advance(time-t_inc, mode)
     
-    def get_inv_mass(self):
-        return -self.P.get_norm()
+    def get_mass(self):
+        return self.P.get_time()
 
 class foref:
     def __init__(self, vel, space):
