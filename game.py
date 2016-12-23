@@ -14,6 +14,8 @@ class Game:
     fuel_energy = 0.001
     fuel_limit = 1000
     
+    fuel_timeout = 10
+    
     turn_speed = np.pi * 0.04
     def __init__(me):
         me.S = dynamics.schwarzschild(1., 1.)
@@ -32,8 +34,11 @@ class Game:
         me.fuel_parts = {}
     
     def engine(me):
-        if me.fuel_used > 0:
-            me.fuel_used -= 1
+        if me.fuel_left > 0:
+            me.fuel_left -= 1
+            me.fuel_left[me.spaceship.shoot2(me.S.get_outward_dir(me.spaceship.P.pt),
+                                             me.fuel_mass,
+                                             me.fuel_energy)] = me.fuel_timeout
     def turn(me, side):
         pass
     def advance(me, time):
