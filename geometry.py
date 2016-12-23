@@ -27,7 +27,7 @@ class vector:
         return self*self
     
     def get_norm(self):
-        return np.sqrt(self.get_norm_sq)
+        return np.sqrt(self.get_norm_sq())
     
     def __add__(self, v2):
         assert isinstance(v2, vector)
