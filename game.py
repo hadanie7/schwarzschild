@@ -2,7 +2,7 @@
 """
 Created on Fri Dec 23 15:59:29 2016
 
-@author: J
+@author: Jonatan Hadas
 """
 
 import dynamics
@@ -10,6 +10,11 @@ import numpy as np
 import pygame
 
 class Game:
+    fuel_mass = 0.001
+    fuel_energy = 0.001
+    fuel_limit = 1000
+    
+    turn_speed = np.pi * 0.04
     def __init__(me):
         me.S = dynamics.schwarzschild(1., 1.)
         k = 3
@@ -22,19 +27,40 @@ class Game:
         
         me.spaceship = dynamics.body(dirc)
         
+        me.fuel_left = me.fuel_limit
+        
+        me.fuel_parts = {}
+    
+    def engine(me):
+        if me.fuel_used > 0:
+            me.fuel_used -= 1
+    def turn(me, side):
+        pass
     def advance(me, time):
-        me.spaceship.advance(time,'coord')
+        me.spaceship.advance(time,'self')
+        for p in me.fuel_parts:
+            if me.fuel_parts[p] == 0:
+                me.fuel_parts.pop(p)
+            else:
+                me.fuel_parts[p] -= 1
     def ss_coords(me):
         phi = me.spaceship.P.pt.q[2]
         r = me.spaceship.P.pt.q[0]
-        print me.spaceship.P.pt.q
         return r*np.array([np.cos(phi),np.sin(phi)])
+    def f_part_coords(me):
+        phis = np.array([p.P.pt.q[2] for p in me.fuel_parts])
+        rs = np.array([p.P.pt.q[0] for p in me.fuel_parts])
+        return list((rs*np.array([np.cos(phis), np.sin(phis)])).T)
 
 class GameDrawer:
     s_rad = 20
+    time_mult = 1
+    step_num = 1
     def __init__(me, upper, game):
         me.game = game
         me.upper = upper
+        
+        me.up_p, me.rt_p, me.lt_p = (False,)*3
         
     def convert(me,game_p):
         cent = np.array([me.upper.sw/2,me.upper.sh/2])
@@ -44,15 +70,44 @@ class GameDrawer:
             if e.type == pygame.QUIT:
                 me.upper.end()
                 return
+            elif e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_UP:
+                    me.up_p = True
+                elif e.key == pygame.K_RIGHT:
+                    me.rt_p = True
+                elif e.key == pygame.K_LEFT:
+                    me.lt_p = True
+            elif e.type == pygame.KEYUP:
+                if e.key == pygame.K_UP:
+                    me.up_p = False
+                elif e.key == pygame.K_RIGHT:
+                    me.rt_p = False
+                elif e.key == pygame.K_LEFT:
+                    me.lt_p = False
+        if not pygame.display.get_active():
+            me.up_p, me.rt_p, me.lt_p = (False,)*3
+            return
+            
                                 
-        me.game.advance(1.0/me.upper.fps_lim)
+        if me.up_p:
+            me.game.engine()
+        for i in xrange(me.step_num):
+            me.game.advance(1.0/me.upper.fps_lim*me.time_mult/me.step_num)
+            if me.rt_p:
+                me.game.turn(1.0/me.step_num)
+            if me.lt_p:
+                me.game.turn(-1.0/me.step_num)
         
         me.upper.scr.fill((150,150,150))
         pygame.draw.circle(me.upper.scr, (0,0,0), me.convert(np.zeros(2)), me.s_rad)
         
         p = me.game.ss_coords()
                 
-        pygame.draw.circle(me.upper.scr, (255,255,255), me.convert(p), 0)
+        pygame.draw.circle(me.upper.scr, (255,255,255), me.convert(p), 2)
+        
+        for p in me.game.f_part_coords():
+            pygame.draw.circle(me.upper.scr, (255,0,0), me.convert(p), 0)
+            
         
         
 
@@ -61,7 +116,7 @@ class Main:
     sw,sh = 640,480
     def __init__(me):
         pygame.init()
-        me.scr = pygame.display.set_mode((me.sw,me.sh))
+        me.scr = pygame.display.set_mode((me.sw,me.sh)) #fullscreen : (max(pygame.display.list_modes()), pygame.FULLSCREEN)
         me.state = None
         
         me.init_game()
