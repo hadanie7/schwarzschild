@@ -81,6 +81,8 @@ class manifold:
                     D[k] -= self.christ(v.pt, i, j, k) * dt.q[i] * v.q[j]
         npt = point(self, v.pt.q + dt.q)
         
+        return vector(npt, v.q+D)        
+        
         ####### debug
         if not hasattr(self, 'ftp'):
             self.ftp = 0

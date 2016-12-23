@@ -32,7 +32,8 @@ class body:
             t_inc = -inc.get_norm()
         elif mode == 'coord':
             return inc.q[3]
-        else raise Exception()
+        else:
+            raise Exception()
         
         if t_inc >= time:
             self.P = self.man.parallel_transport(self.P, (time/t_inc)*inc )
