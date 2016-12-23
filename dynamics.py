@@ -45,7 +45,7 @@ class body:
         
     
     def get_velocity(self):  
-        return self.P / self.get_mass()
+        return (1./ self.get_mass()) * self.P 
     
         
     def advance(self, time, mode = 'self'):
