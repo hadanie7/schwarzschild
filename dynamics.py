@@ -16,7 +16,10 @@ class body:
     
     def shoot(self, Ps):
         assert Ps.pt is self.P.pt
-        self.P = self.P - P
+        self.P = self.P - Ps
+        
+        assert self.man.is_timelike(Ps)
+        assert self.man.is_timelike(self.P)
         # TODO: check validity of the new P's
         return body(Ps)
     
@@ -43,5 +46,14 @@ class body:
     
     def get_inv_mass(self):
         return -self.P.get_norm()
+
+class foref:
+    def __init__(self, vel, space):
+        assert isinstance(vel, vector)
+        self.vel = vel
+        self.man = vel.pt.man
+        assert self.man.is_timelike(vel)
+    
+    
         
         
