@@ -14,7 +14,7 @@ class Game:
     fuel_energy = 0.001
     fuel_limit = 300
     
-    fuel_timeout = 1000
+    fuel_timeout = 0
     
     turn_speed = np.pi * 0.04
     def __init__(me):
@@ -35,6 +35,7 @@ class Game:
     
     def engine(me):
         if me.fuel_left > 0:
+            print me.fuel_left
             me.fuel_left -= 1
             me.fuel_parts[me.spaceship.shoot2(me.S.get_outward_dir(me.spaceship.P.pt),
                                              me.fuel_mass,
