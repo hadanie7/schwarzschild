@@ -30,17 +30,26 @@ class body:
         
         P = self.P
         v = self.get_velocity()
+        """print v
+        print P
+        print d
+        print d*P
+        print (d*P/P.sq())
+        print (d*P/P.sq())*P"""
         d = d - (d*P/P.sq())*P # just make sure d is a space vector in my frame
         d = (1./d.sq()) * d # length 1
         
-        # equations: [Eq(l*l-k*k, ms*ms), Eq(-k*k+(l+m)**2, (m-ms-E)**2)]
-        # ls = l**2, ks = k**2
-        ks = E * (E + 2*ms) * (E/m - 2) * (E/m - 2 + 2*ms/m)
-        l = E*E/(2*m) - E + E*ms/m - ms
-        
+        # equations: [Eq(l*l-k*k, ms*ms), Eq(-k*k+(m-l)**2, (m-ms-E)**2)]
+        # ks = k**2
+        ks = E * (E + 2*ms) * (E/m - 2) * (E/m - 2 + 2*ms/m) * 0.25
+        l = -E*E/(2*m) + E - E*ms/m + ms
+        """print 'eqs:'
+        print l*l-ks, ms*ms
+        print -ks+(l+m)**2, (m-ms-E)**2"""
         # Ps = k*d + l*v = k*d + l/m * m*v
         Ps = np.sqrt(ks) * d  +  l*v
-        self.shoot(Ps)
+        print locals()
+        return self.shoot(Ps)
         
         
     

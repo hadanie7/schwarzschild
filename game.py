@@ -12,9 +12,9 @@ import pygame
 class Game:
     fuel_mass = 0.001
     fuel_energy = 0.001
-    fuel_limit = 1000
+    fuel_limit = 300
     
-    fuel_timeout = 10
+    fuel_timeout = 1000
     
     turn_speed = np.pi * 0.04
     def __init__(me):
@@ -36,18 +36,23 @@ class Game:
     def engine(me):
         if me.fuel_left > 0:
             me.fuel_left -= 1
-            me.fuel_left[me.spaceship.shoot2(me.S.get_outward_dir(me.spaceship.P.pt),
+            me.fuel_parts[me.spaceship.shoot2(me.S.get_outward_dir(me.spaceship.P.pt),
                                              me.fuel_mass,
                                              me.fuel_energy)] = me.fuel_timeout
     def turn(me, side):
         pass
     def advance(me, time):
         me.spaceship.advance(time,'self')
+        fr = set()
         for p in me.fuel_parts:
             if me.fuel_parts[p] == 0:
-                me.fuel_parts.pop(p)
+                fr.add(p)
             else:
                 me.fuel_parts[p] -= 1
+                p.advance(me.spaceship.P.pt.q[3] - p.P.pt.q[3]
+                          ,'coord')
+        for p in fr:
+            me.fuel_parts.pop(p)
     def ss_coords(me):
         phi = me.spaceship.P.pt.q[2]
         r = me.spaceship.P.pt.q[0]
@@ -59,7 +64,7 @@ class Game:
 
 class GameDrawer:
     s_rad = 20
-    time_mult = 1
+    time_mult = 3
     step_num = 1
     def __init__(me, upper, game):
         me.game = game

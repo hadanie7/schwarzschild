@@ -13,12 +13,12 @@ class point:
         self.q = q
     
     def get_vector(self, q):
-        return vector(self, np.array(q))
+        return vector(self, q)
     
 class vector:
     def __init__(self, pt, q):
         self.pt = pt
-        self.q = q
+        self.q = np.array(q)
     
     def scale(self, lamb):
         return vector(self.pt, self.q.copy()*lamb)
@@ -58,7 +58,18 @@ class vector:
         except:
             pass
         raise Exception("incompatible type for multiplication")
-
+    
+    def __repr__(self):
+        return 'vec' + repr(self.q)
+    
+    def project_on(self, v2):
+        return (self*v2 / v2.sq()) * v2
+    
+    def ortho_part(self, v2):
+        return self - (self*v2 / v2.sq()) * v2
+    
+    
+    
 def gram_schmidt(vs):
     us = []
     for v in vs:
@@ -203,5 +214,5 @@ class schwarzschild(manifold):
     
     def get_outward_dir(self, pt):
         g = self.gram(pt)
-        return vector(pt, [1./np.sqrt(g[0,0]), 0, 0, 1./np.sqrt(g[3,3])])
+        return vector(pt, [1./np.sqrt(g[0,0]), 0, 0, 1./np.sqrt(-g[3,3])])
         
