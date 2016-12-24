@@ -26,13 +26,21 @@ class Game:
         r = k*me.S.rs
 
         x0 = me.S.get_point_by_coords([r, np.pi/2, 0, 0])
-        dirc = x0.get_vector([0, 0, v/r, 1.])
+        dirc = me.S.get_vec_by_coords(x0, [0, 0, v/r, 1.])
         
         me.spaceship = dynamics.body(dirc)
+        
+        me.spaceship.set_frame(me.S.get_vec_by_coords(x0, [-1, 0, 0, 0]),
+                               me.S.get_vec_by_coords(x0, [0, 0, 1, 0]),
+                               me.S.get_vec_by_coords(x0, [0, 1, 0, 0]))
         
         me.fuel_left = me.fuel_limit
         
         me.fuel_parts = {}
+        
+        me.angle = 0
+        
+        
     
     def engine(me):
         if me.fuel_left > 0:
@@ -42,7 +50,7 @@ class Game:
                                              me.fuel_mass,
                                              me.fuel_energy)] = me.fuel_timeout
     def turn(me, side):
-        pass
+        me.angle += side
     def advance(me, time):
         me.spaceship.advance(time,'self')
         fr = set()
@@ -51,23 +59,33 @@ class Game:
                 fr.add(p)
             else:
                 me.fuel_parts[p] -= 1
-                p.advance(me.spaceship.P.pt.q[3] - p.P.pt.q[3]
+                p.advance(me.S.get_coords(me.spaceship.P.pt)[3] - me.S.get_coords(p.P.pt)[3]
                           ,'coord')
         for p in fr:
             me.fuel_parts.pop(p)
     def ss_coords(me):
-        phi = me.spaceship.P.pt.q[2]
-        r = me.spaceship.P.pt.q[0]
+        phi = me.S.get_coords(me.spaceship.P.pt)[2]
+        r = me.S.get_coords(me.spaceship.P.pt)[0]
         return r*np.array([np.cos(phi),np.sin(phi)])
     def f_part_coords(me):
-        phis = np.array([p.P.pt.q[2] for p in me.fuel_parts])
-        rs = np.array([p.P.pt.q[0] for p in me.fuel_parts])
+        phis = np.array([me.S.get_coords(p.P.pt)[2] for p in me.fuel_parts])
+        rs = np.array([me.S.get_coords(p.P.pt)[0] for p in me.fuel_parts])
         return list((rs*np.array([np.cos(phis), np.sin(phis)])).T)
     def get_ss_dirc(me):
-        phi1 = me.spaceship.P.pt.q[2]
-        phi2 = phi1 + np.pi/2
-        phis = np.array([phi1,phi2])
-        return -(np.array([np.cos(phis),np.sin(phis)]).T)
+#        phi1 = me.S.get_coords(me.spaceship.P.pt)[2]
+#        phi2 = phi1 + np.pi/2
+#        phis = np.array([phi1,phi2])
+#        return -(np.array([np.cos(phis),np.sin(phis)]).T)
+        x,y,z = me.spaceship.get_space_vectors()
+        v = me.spaceship.get_velocity()
+        t = me.S.get_vec_by_coords(me.spaceship.P.pt, [0,0,0,1])
+        fr = x*np.cos(me.angle) -y*np.sin(me.angle)
+        sd = x*np.sin(me.angle) +y*np.cos(me.angle)
+        fr -= (fr*t)/(v*t)*v
+        sd -= (sd*t)/(v*t)*v
+        return me.S.get_coords(fr)[:2],me.S.get_coords(sd)[:2]
+        
+        
 
 class GameDrawer:
     s_rad = 20
