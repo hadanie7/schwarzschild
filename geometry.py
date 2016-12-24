@@ -61,6 +61,7 @@ class vector:
     
     def __repr__(self):
         return 'vec' + repr(self.q)
+        
     
     def project_on(self, v2):
         return (self*v2 / v2.sq()) * v2
@@ -68,14 +69,17 @@ class vector:
     def ortho_part(self, v2):
         return self - (self*v2 / v2.sq()) * v2
     
+    def normalize(self):
+        return 1./(np.sqrt(np.abs(self.sq()))) * self
+    
     
     
 def gram_schmidt(vs):
     us = []
     for v in vs:
         for u in us:
-            v = v - (v*u/u.sq())*u
-        v = 1./(np.sqrt(np.abs(v.sq()))) * v
+            v = v.ortho_part(u)
+        v = v.normalize()
         us.append(v)
         
 

@@ -21,6 +21,7 @@ class body:
         assert Ps.is_timelike()
         assert self.P.is_timelike()
         # TODO: check validity of the new P's
+        print self.get_mass()
         return body(Ps)
     
     def shoot2(self, d, mass, energy):
@@ -36,8 +37,8 @@ class body:
         print d*P
         print (d*P/P.sq())
         print (d*P/P.sq())*P"""
-        d = d - (d*P/P.sq())*P # just make sure d is a space vector in my frame
-        d = (1./d.sq()) * d # length 1
+        d = d.ortho_part(P) # just make sure d is a space vector in my frame
+        d = d.normalize() # length 1
         
         # equations: [Eq(l*l-k*k, ms*ms), Eq(-k*k+(m-l)**2, (m-ms-E)**2)]
         # ks = k**2
@@ -48,7 +49,12 @@ class body:
         print -ks+(l+m)**2, (m-ms-E)**2"""
         # Ps = k*d + l*v = k*d + l/m * m*v
         Ps = np.sqrt(ks) * d  +  l*v
-        print locals()
+        #print locals()
+        print '-----------'
+        print d*d, v*v, d*v, v*d
+        print E, ms, m
+        print self.get_mass()
+        print Ps.get_time()
         return self.shoot(Ps)
         
         
