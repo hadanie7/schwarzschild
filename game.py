@@ -8,6 +8,7 @@ Created on Fri Dec 23 15:59:29 2016
 import dynamics
 import numpy as np
 import pygame
+import graphics_transform as trans
 
 class Game:
     fuel_mass = 0.001
@@ -66,7 +67,7 @@ class Game:
         phi1 = me.spaceship.P.pt.q[2]
         phi2 = phi1 + np.pi/2
         phis = np.array([phi1,phi2])
-        return (np.array([np.cos(phis),np.sin(phis)]).T)
+        return -(np.array([np.cos(phis),np.sin(phis)]).T)
 
 class GameDrawer:
     s_rad = 20
@@ -79,6 +80,10 @@ class GameDrawer:
         me.up_p, me.rt_p, me.lt_p = (False,)*3
         
         me.trace = []
+        
+        me.picture = pygame.image.load('gravitilrocket.png')
+        
+        me.use_pic = False
         
     def convert(me,game_p):
         cent = np.array([me.upper.sw/2,me.upper.sh/2])
@@ -133,7 +138,16 @@ class GameDrawer:
             pygame.draw.lines(me.upper.scr, (255,255,255), False, me.trace)
         if len(me.trace) == 0 or me.trace[-1] != me.convert(p):
             me.trace.append(me.convert(p))
-        pygame.draw.polygon(me.upper.scr, (255,255,255), me.spaceship_points())
+            
+        if me.use_pic:
+            x,y = me.game.get_ss_dirc() / 41
+            transform = trans.compose_transform(x,y)
+            img = trans.apply_transform(me.picture, transform)
+            w,h = img.get_size()
+            x,y = me.trace[-1]
+            me.upper.scr.blit(img, (x-w/2, y-h/2))
+        else:
+            pygame.draw.polygon(me.upper.scr, (255,255,255), me.spaceship_points())
         #pygame.draw.circle(me.upper.scr, (255,255,255), me.trace[-1], 2)
         
         for p in me.game.f_part_coords():
