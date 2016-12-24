@@ -62,6 +62,11 @@ class Game:
         phis = np.array([p.P.pt.q[2] for p in me.fuel_parts])
         rs = np.array([p.P.pt.q[0] for p in me.fuel_parts])
         return list((rs*np.array([np.cos(phis), np.sin(phis)])).T)
+    def get_ss_dirc(me):
+        phi1 = me.spaceship.P.pt.q[2]
+        phi2 = phi1 + np.pi/2
+        phis = np.array([phi1,phi2])
+        return (np.array([np.cos(phis),np.sin(phis)]).T)
 
 class GameDrawer:
     s_rad = 20
@@ -73,9 +78,18 @@ class GameDrawer:
         
         me.up_p, me.rt_p, me.lt_p = (False,)*3
         
+        me.trace = []
+        
     def convert(me,game_p):
         cent = np.array([me.upper.sw/2,me.upper.sh/2])
         return tuple(int(i) for i in cent + me.s_rad / me.game.S.rs * game_p)
+        
+    def spaceship_points(me):
+        x,y = me.game.get_ss_dirc()
+        ps = np.array([(1,0),(-1,1),(-0.5,0),(-1,-1)])*0.3
+        sp = me.game.ss_coords()
+        ps2 = [me.convert(sp+cx*x+cy*y) for cx,cy in ps]
+        return ps2
     def main(me):
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
@@ -113,8 +127,14 @@ class GameDrawer:
         pygame.draw.circle(me.upper.scr, (0,0,0), me.convert(np.zeros(2)), me.s_rad)
         
         p = me.game.ss_coords()
-                
-        pygame.draw.circle(me.upper.scr, (255,255,255), me.convert(p), 2)
+        
+        
+        if len(me.trace)>2:
+            pygame.draw.lines(me.upper.scr, (255,255,255), False, me.trace)
+        if len(me.trace) == 0 or me.trace[-1] != me.convert(p):
+            me.trace.append(me.convert(p))
+        pygame.draw.polygon(me.upper.scr, (255,255,255), me.spaceship_points())
+        #pygame.draw.circle(me.upper.scr, (255,255,255), me.trace[-1], 2)
         
         for p in me.game.f_part_coords():
             pygame.draw.circle(me.upper.scr, (255,0,0), me.convert(p), 0)
@@ -127,7 +147,7 @@ class Main:
     sw,sh = 640,480
     def __init__(me):
         pygame.init()
-        me.scr = pygame.display.set_mode((me.sw,me.sh)) #fullscreen : (max(pygame.display.list_modes()), pygame.FULLSCREEN)
+        me.scr = pygame.display.set_mode((me.sw,me.sh)) #fullscreen :  me.sw,me.sh = max(pygame.display.list_modes())###, pygame.FULLSCREEN)
         me.state = None
         
         me.init_game()
