@@ -148,4 +148,8 @@ class Main:
         me.state = GameDrawer(me, Game())
         
 if __name__ == "__main__":
-    Main()
+    try:
+        Main()
+    except:
+        pygame.quit()
+        raise
