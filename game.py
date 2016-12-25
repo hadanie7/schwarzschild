@@ -59,7 +59,7 @@ class Game:
                 fr.add(p)
             else:
                 me.fuel_parts[p] -= 1
-                p.advance(me.S.get_coords(me.spaceship.P.pt)[3] - me.S.get_coords(p.P.pt)[3]
+                p.advance(me.S.get_coords(me.spaceship.get_pt())[3] - me.S.get_coords(p.get_pt())[3]
                           ,'coord')
         for p in fr:
             me.fuel_parts.pop(p)
@@ -72,13 +72,13 @@ class Game:
         rs = np.array([me.S.get_coords(p.get_pt())[0] for p in me.fuel_parts])
         return list((rs*np.array([np.cos(phis), np.sin(phis)])).T)
     def get_ss_dirc(me):
-#        phi1 = me.S.get_coords(me.spaceship.P.pt)[2]
+#        phi1 = me.S.get_coords(me.spaceship.get_pt())[2]
 #        phi2 = phi1 + np.pi/2
 #        phis = np.array([phi1,phi2])
 #        return -(np.array([np.cos(phis),np.sin(phis)]).T)
         x,y,z = me.spaceship.get_space_vectors()
         v = me.spaceship.get_velocity()
-        t = me.S.get_vec_by_coords(me.spaceship.P.pt, [0,0,0,1])
+        t = me.S.get_vec_by_coords(me.spaceship.get_pt(), [0,0,0,1])
         fr = x*np.cos(me.angle) -y*np.sin(me.angle)
         sd = x*np.sin(me.angle) +y*np.cos(me.angle)
         fr -= (fr*t)/(v*t)*v
