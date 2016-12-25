@@ -53,7 +53,7 @@ class body:
         
     def set_frame(self, vectors):
         self.mass = self.P.get_time()
-        v = self.P / self.mass
+        v = (1./ self.mass) * self.P
         base = gram_schmidt([v]+vectors)
         self.frame = foref(base[0], base[1:])
         del self.P
@@ -80,7 +80,7 @@ class body:
             return (1./ self.get_mass()) * self.P 
     
     def get_space_vectors(self):
-        NotImplemented
+        return self.frame.space
     
         
     def advance(self, time, mode = 'self'):
@@ -92,7 +92,8 @@ class body:
         ttrans = None
 
         P = self.get_P()
-        
+        if self.has_frame():
+            self.frame.diagnostics()
         while True:
             
             inc = self.man.dif_scale(P)
@@ -121,17 +122,18 @@ class body:
             if stop: break
             
             it_count += 1
-            if (it_count) > 300: raise Exception('too many iterations.')
+            if (it_count) > 5000: raise Exception('too many iterations.')
         
         if self.has_frame():
             self.transport(ttrans)
         else:
             self.P = P
     
-    def tansport(self, m):
-        self.P = m(self.P)
+    def transport(self, m):
         if self.has_frame():
             self.frame.transport(m)
+        else:
+            self.P = m(self.P)
     
     def boost(self, newP):
         if not self.has_frame():
@@ -145,20 +147,25 @@ class body:
     
     def get_mass(self):
         if self.has_frame():
-            return self.get_mass()
+            return self.mass
         else:
             return self.P.get_time()
 
 class foref:
     def __init__(self, vel, space):
         assert isinstance(vel, vector)
-        self.vel = vel
-        self.man = vel.pt.man
+        assert len(space) == 3
+        for s in space:
+            assert isinstance(s, vector)
+           
         assert vel.is_timelike()
+        self.vel = vel
+        self.space = space
+        
     
     def lorentz(self, del_v):
         v = self.vel
-        
+        self.diagnostics()
         # gam = v*(v+del_v)
         # v*del_v = 1-gam
         # gm1 = gam-1
@@ -170,22 +177,32 @@ class foref:
         # x -> ax + by, x*x=1 x*v = 0
         # a = gam, b = sqrt(gam**2-1)
         # y = (x*y)x + y-(x*y)x
-        # y -> (x*y) ((gam-1)x + sqrt(gam**2-1)*v)
-        # y -> (xs*y) (xs + sqrt(gam+1)*v)
+        # y -> y + (x*y)(ax+bv) - (x*y)x
+        # y -> y + (x*y)((a-1)x+bv)
+        # y -> y + (x*y) ((gam-1)x + sqrt(gam**2-1)*v)
+        # y -> y + (xs*y) (xs + sqrt(gam+1)*v)
         n_vel = v + del_v        
                
-        gm1 = - v*del_v
+        gm1 = (-1.)* v*del_v
         sp1 = np.sqrt(gm1+2)
         
         xs = (gm1 / sp1)*v + 1./sp1*del_v
         
-        n_space = [(xs*y)*(xs+sp1*v) for y in self.space]
+        n_space = [y+(xs*y)*(xs+sp1*v) for y in self.space]
         
         self.vel = n_vel
         self.space = n_space
+        self.diagnostics()
         
     def transport(self, m):
         assert isinstance(m, lin_map)
         self.vel = m(self.vel)
         self.space = [m(s) for s in self.space]
+    
+    def diagnostics(self):
+        vcs = [self.vel] + list(self.space)
+        print 'foref diagnostics:'
+        print np.array([[v*u for v in vcs] for u in vcs])
+        #print [[v*u for v in vcs] for u in vcs]
+        print ''
         

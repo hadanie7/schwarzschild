@@ -95,7 +95,7 @@ def gram_schmidt(vs):
             v = v.ortho_part(u)
         v = v.normalize()
         us.append(v)
-        
+    return us
 
 class manifold:
     def __init__(self, dim):
