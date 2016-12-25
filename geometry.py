@@ -235,10 +235,16 @@ class schwarzschild(manifold):
         return np.diag([1./(1.-self.rs/r), r*r, r*r*np.sin(th)**2,
                         self.rs/r-1])
     
-    def dif_scale(self, v, d=0.001):
+    def dif_scale(self, v, d=0.05):
+        dist = v.pt.q[0]/self.rs
+        d *= dist
         return v.scale(d/np.sqrt(np.inner(v.q, v.q)))
     
     def get_outward_dir(self, pt):
         g = self.gram(pt)
         return vector(pt, [1./np.sqrt(g[0,0]), 0, 0, 1./np.sqrt(-g[3,3])])
+    
+    def get_inward_dir(self, pt):
+        g = self.gram(pt)
+        return vector(pt, [-1./np.sqrt(g[0,0]), 0, 0, 1./np.sqrt(-g[3,3])])
         
