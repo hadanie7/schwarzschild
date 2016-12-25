@@ -92,8 +92,7 @@ class body:
         ttrans = None
 
         P = self.get_P()
-        if self.has_frame():
-            self.frame.diagnostics()
+
         while True:
             
             inc = self.man.dif_scale(P)
@@ -164,15 +163,13 @@ class foref:
         
     
     def lorentz(self, del_v):
-        v = self.vel
-        self.diagnostics()
         # gam = v*(v+del_v)
         # v*del_v = 1-gam
         # gm1 = gam-1
         # eqs: 
         # x = alp*v + bet*del_v
         # x*x = 1, x*v = 0
-        # solution: xs = x*sqrt(gam-1) = (gam-1)/sqrt(gam+1)*v + 1/sqrt(gam+1)*del_v
+        # solution: xs = x*sqrt(gam-1)*sqrt(gam+1) = -(gam-1)*v + del_v
         # eqs:
         # x -> ax + by, x*x=1 x*v = 0
         # a = gam, b = sqrt(gam**2-1)
@@ -181,18 +178,17 @@ class foref:
         # y -> y + (x*y)((a-1)x+bv)
         # y -> y + (x*y) ((gam-1)x + sqrt(gam**2-1)*v)
         # y -> y + (xs*y) (xs + sqrt(gam+1)*v)
+        v = self.vel
         n_vel = v + del_v        
                
         gm1 = (-1.)* v*del_v
-        sp1 = np.sqrt(gm1+2)
         
-        xs = (gm1 / sp1)*v + 1./sp1*del_v
-        
-        n_space = [y+(xs*y)*(xs+sp1*v) for y in self.space]
+        xs = -gm1*v + del_v
+        vec = 1./(gm1+2)*xs + v
+        n_space = [y + (xs*y)*vec  for y in self.space]
         
         self.vel = n_vel
         self.space = n_space
-        self.diagnostics()
         
     def transport(self, m):
         assert isinstance(m, lin_map)
@@ -205,4 +201,7 @@ class foref:
         print np.array([[v*u for v in vcs] for u in vcs])
         #print [[v*u for v in vcs] for u in vcs]
         print ''
-        
+    
+    def fix(self):
+        base = gram_schmidt([self.vel]+self.space)
+        self.vel, self.space = base[0], base[1:]

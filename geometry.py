@@ -77,6 +77,7 @@ class lin_map:
         self.pt1 = pt1
         self.pt2 = pt2
         self.q = np.array(q)
+        assert self.q.shape == (pt1.man.dim,)*2
     
     def __call__(self, v):
         assert isinstance(v, vector)
