@@ -30,9 +30,9 @@ class Game:
         
         me.spaceship = dynamics.body(dirc)
         
-        me.spaceship.set_frame(me.S.get_vec_by_coords(x0, [-1, 0, 0, 0]),
+        me.spaceship.set_frame([me.S.get_vec_by_coords(x0, [-1, 0, 0, 0]),
                                me.S.get_vec_by_coords(x0, [0, 0, 1, 0]),
-                               me.S.get_vec_by_coords(x0, [0, 1, 0, 0]))
+                               me.S.get_vec_by_coords(x0, [0, 1, 0, 0])])
         
         me.fuel_left = me.fuel_limit
         
@@ -46,7 +46,7 @@ class Game:
         if me.fuel_left > 0:
             print me.fuel_left
             me.fuel_left -= 1
-            me.fuel_parts[me.spaceship.shoot2(me.S.get_outward_dir(me.spaceship.P.pt),
+            me.fuel_parts[me.spaceship.shoot2(me.S.get_outward_dir(me.spaceship.get_pt()),
                                              me.fuel_mass,
                                              me.fuel_energy)] = me.fuel_timeout
     def turn(me, side):
@@ -64,12 +64,12 @@ class Game:
         for p in fr:
             me.fuel_parts.pop(p)
     def ss_coords(me):
-        phi = me.S.get_coords(me.spaceship.P.pt)[2]
-        r = me.S.get_coords(me.spaceship.P.pt)[0]
+        phi = me.S.get_coords(me.spaceship.get_pt())[2]
+        r = me.S.get_coords(me.spaceship.get_pt())[0]
         return r*np.array([np.cos(phi),np.sin(phi)])
     def f_part_coords(me):
-        phis = np.array([me.S.get_coords(p.P.pt)[2] for p in me.fuel_parts])
-        rs = np.array([me.S.get_coords(p.P.pt)[0] for p in me.fuel_parts])
+        phis = np.array([me.S.get_coords(p.get_pt())[2] for p in me.fuel_parts])
+        rs = np.array([me.S.get_coords(p.get_pt())[0] for p in me.fuel_parts])
         return list((rs*np.array([np.cos(phis), np.sin(phis)])).T)
     def get_ss_dirc(me):
 #        phi1 = me.S.get_coords(me.spaceship.P.pt)[2]

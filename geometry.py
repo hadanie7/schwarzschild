@@ -10,7 +10,7 @@ import numpy as np
 class point:
     def __init__(self, man, q):
         self.man = man
-        self.q = q
+        self.q = np.array(q)
     
     def get_vector(self, q):
         return vector(self, q)
@@ -72,7 +72,22 @@ class vector:
     def normalize(self):
         return 1./(np.sqrt(np.abs(self.sq()))) * self
     
+class lin_map:
+    def __init__(self, pt1, pt2, q):
+        self.pt1 = pt1
+        self.pt2 = pt2
+        self.q = np.array(q)
+        assert self.q.shape == (pt1.man.dim,)*2
     
+    def __call__(self, v):
+        assert isinstance(v, vector)
+        assert v.pt is self.pt1
+        return vector(self.pt2, np.dot(self.q, v.q))
+    
+    def __mul__(self, m2):
+        assert isinstance(m2, lin_map)
+        assert self.pt1 is m2.pt2
+        return lin_map(m2.pt1, self.pt2, np.dot(self.q, m2.q))
     
 def gram_schmidt(vs):
     us = []
@@ -81,14 +96,21 @@ def gram_schmidt(vs):
             v = v.ortho_part(u)
         v = v.normalize()
         us.append(v)
-        
+    return us
 
 class manifold:
     def __init__(self, dim):
         self.dim = dim
     
     def get_point_by_coords(self, q):
-        return point(self, np.array(q))
+        return point(self, q)
+    
+    def get_coords(self, obj):
+        assert isinstance(obj, vector) or isinstance(obj, point)
+        return obj.q
+    
+    def get_vec_by_coords(self, pt, q):
+        return pt.get_vector(q)
     
     def christ(self, pt, i, j, k):
         NotImplemented #virtual
@@ -98,9 +120,13 @@ class manifold:
     
     def dif_scale(self, v, d):
         NotImplemented #virtual
-    
+
     """ parallel transport of the vector v by a short increment dt """
-    def parallel_transport2(self, v, dt):
+    def parallel_transport(self, v, dt):
+        return self.get_parallel_transport(dt)(v)    
+
+    """ parallel transport of the vector v by a short increment dt """
+    """def parallel_transport2(self, v, dt):
         assert isinstance(v, vector); assert isinstance(dt, vector)
         assert v.pt is dt.pt
         D = np.zeros(self.dim)
@@ -111,30 +137,27 @@ class manifold:
                     D[k] -= self.christ2(v.pt, i, j, k) * dt.q[i] * v.q[j]
         npt = point(self, v.pt.q + dt.q)
         
-        return vector(npt, v.q+D)        
+        return vector(npt, v.q+D)"""
         
-        ####### debug
-        if not hasattr(self, 'ftp'):
-            self.ftp = 0
-        if self.ftp < 5:
-            print D
-        self.ftp += 1
-
     """ parallel transport of the vector v by a short increment dt """
-    def parallel_transport(self, v, dt):
+    """def parallel_transport3(self, v, dt):
+        tmp = self.get_parallel_transport(dt)(v)
+        print type(tmp), tmp
+        return tmp
         assert isinstance(v, vector); assert isinstance(dt, vector)
         assert v.pt is dt.pt
         D = -np.tensordot(self.christ(v.pt), np.outer(v.q, dt.q))
         npt = point(self, v.pt.q + dt.q)
         
-        return vector(npt, v.q+D)
-        
-        ####### debug
-        if not hasattr(self, 'ftp'):
-            self.ftp = 0
-        if self.ftp < 5:
-            print D
-        self.ftp += 1
+        return vector(npt, v.q+D)"""
+    
+    def get_parallel_transport(self, dt):
+        assert isinstance(dt, vector)
+        D = -np.tensordot(self.christ(dt.pt), dt.q, (1, 0))
+        tq = np.diag(np.ones(self.dim)) + D
+        npt = point(self, dt.pt.q + dt.q)
+
+        return lin_map(dt.pt, npt, tq)
     
     def inner_product(self, v1, v2):
         assert isinstance(v1, vector); assert isinstance(v2, vector)
@@ -213,10 +236,16 @@ class schwarzschild(manifold):
         return np.diag([1./(1.-self.rs/r), r*r, r*r*np.sin(th)**2,
                         self.rs/r-1])
     
-    def dif_scale(self, v, d=0.001):
+    def dif_scale(self, v, d=0.05):
+        dist = v.pt.q[0]/self.rs
+        d *= dist
         return v.scale(d/np.sqrt(np.inner(v.q, v.q)))
     
     def get_outward_dir(self, pt):
         g = self.gram(pt)
         return vector(pt, [1./np.sqrt(g[0,0]), 0, 0, 1./np.sqrt(-g[3,3])])
+    
+    def get_inward_dir(self, pt):
+        g = self.gram(pt)
+        return vector(pt, [-1./np.sqrt(g[0,0]), 0, 0, 1./np.sqrt(-g[3,3])])
         

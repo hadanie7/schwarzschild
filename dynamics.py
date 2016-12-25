@@ -15,13 +15,14 @@ class body:
         assert P.is_timelike()
     
     def shoot(self, Ps):
-        assert Ps.pt is self.P.pt
-        self.P = self.P - Ps
+        assert Ps.pt is self.get_pt()
+        newP = self.get_P() - Ps
         
         assert Ps.is_timelike()
-        assert self.P.is_timelike()
+        assert newP.is_timelike()
         # TODO: check validity of the new P's
-        print self.get_mass()
+        
+        self.boost(newP)
         return body(Ps)
     
     def shoot2(self, d, mass, energy):
@@ -29,15 +30,8 @@ class body:
         ms = mass ; del mass
         E = energy ; del energy
         
-        P = self.P
         v = self.get_velocity()
-        """print v
-        print P
-        print d
-        print d*P
-        print (d*P/P.sq())
-        print (d*P/P.sq())*P"""
-        d = d.ortho_part(P) # just make sure d is a space vector in my frame
+        d = d.ortho_part(v) # just make sure d is a space vector in my frame
         d = d.normalize() # length 1
         
         # equations: [Eq(l*l-k*k, ms*ms), Eq(-k*k+(m-l)**2, (m-ms-E)**2)]
@@ -50,47 +44,164 @@ class body:
         # Ps = k*d + l*v = k*d + l/m * m*v
         Ps = np.sqrt(ks) * d  +  l*v
         #print locals()
-        print '-----------'
+        """print '-----------'
         print d*d, v*v, d*v, v*d
         print E, ms, m
         print self.get_mass()
-        print Ps.get_time()
+        print Ps.get_time()"""
         return self.shoot(Ps)
         
-        
+    def set_frame(self, vectors):
+        self.mass = self.P.get_time()
+        v = (1./ self.mass) * self.P
+        base = gram_schmidt([v]+vectors)
+        self.frame = foref(base[0], base[1:])
+        del self.P
     
-    def get_velocity(self):  
-        return (1./ self.get_mass()) * self.P 
+    def get_P(self):
+        if self.has_frame():
+            return self.mass * self.frame.vel
+        else:
+            return self.P
+    
+    def get_pt(self):
+        if self.has_frame():
+            return self.frame.vel.pt
+        else:
+            return self.P.pt
+    
+    def has_frame(self):
+        return hasattr(self, 'frame')
+    
+    def get_velocity(self):
+        if self.has_frame():
+            return self.frame.vel
+        else:
+            return (1./ self.get_mass()) * self.P 
+    
+    def get_space_vectors(self):
+        return self.frame.space
     
         
     def advance(self, time, mode = 'self'):
         """ advance by the given amount of time.
         parameters:
             mode: determines how time is measured. accepted values: 'self', 'coord' """
-        inc = self.man.dif_scale(self.P)
-        if mode == 'self':
-            t_inc = inc.get_time()
-        elif mode == 'coord':
-            t_inc = inc.q[3]
-        else:
-            raise Exception()
+        it_count = 0
+        stop = False
+        ttrans = None
+
+        P = self.get_P()
+
+        while True:
+            
+            inc = self.man.dif_scale(P)
+            if mode == 'self':
+                t_inc = inc.get_time()
+            elif mode == 'coord':
+                t_inc = inc.q[3]
+            else:
+                raise Exception()
+            
+            if t_inc >= time:
+                cur_inc = (time/t_inc)*inc
+                stop = True
+            else:
+                cur_inc = inc
+                time -= t_inc
+            
+            trans = self.man.get_parallel_transport(cur_inc)
+            P = trans(P)
+            if self.has_frame():
+                if ttrans is None:
+                    ttrans = trans
+                else:
+                    ttrans = trans*ttrans
+            
+            if stop: break
+            
+            it_count += 1
+            if (it_count) > 5000: raise Exception('too many iterations.')
         
-        if t_inc >= time:
-            self.P = self.man.parallel_transport(self.P, (time/t_inc)*inc )
+        if self.has_frame():
+            self.transport(ttrans)
         else:
-            self.P = self.man.parallel_transport(self.P, inc)
-            self.advance(time-t_inc, mode)
+            self.P = P
+    
+    def transport(self, m):
+        if self.has_frame():
+            self.frame.transport(m)
+        else:
+            self.P = m(self.P)
+    
+    def boost(self, newP):
+        if not self.has_frame():
+            self.P = newP
+            return
+        self.mass = newP.get_time()
+        newV = newP.normalize()
+        del_v = newV - self.get_velocity()
+        self.frame.lorentz(del_v)
+        
     
     def get_mass(self):
-        return self.P.get_time()
+        if self.has_frame():
+            return self.mass
+        else:
+            return self.P.get_time()
 
 class foref:
     def __init__(self, vel, space):
         assert isinstance(vel, vector)
-        self.vel = vel
-        self.man = vel.pt.man
+        assert len(space) == 3
+        for s in space:
+            assert isinstance(s, vector)
+           
         assert vel.is_timelike()
-    
-    
+        self.vel = vel
+        self.space = space
         
+    
+    def lorentz(self, del_v):
+        # gam = v*(v+del_v)
+        # v*del_v = 1-gam
+        # gm1 = gam-1
+        # eqs: 
+        # x = alp*v + bet*del_v
+        # x*x = 1, x*v = 0
+        # solution: xs = x*sqrt(gam-1)*sqrt(gam+1) = -(gam-1)*v + del_v
+        # eqs:
+        # x -> ax + by, x*x=1 x*v = 0
+        # a = gam, b = sqrt(gam**2-1)
+        # y = (x*y)x + y-(x*y)x
+        # y -> y + (x*y)(ax+bv) - (x*y)x
+        # y -> y + (x*y)((a-1)x+bv)
+        # y -> y + (x*y) ((gam-1)x + sqrt(gam**2-1)*v)
+        # y -> y + (xs*y) (xs + sqrt(gam+1)*v)
+        v = self.vel
+        n_vel = v + del_v        
+               
+        gm1 = (-1.)* v*del_v
         
+        xs = -gm1*v + del_v
+        vec = 1./(gm1+2)*xs + v
+        n_space = [y + (xs*y)*vec  for y in self.space]
+        
+        self.vel = n_vel
+        self.space = n_space
+        
+    def transport(self, m):
+        assert isinstance(m, lin_map)
+        self.vel = m(self.vel)
+        self.space = [m(s) for s in self.space]
+    
+    def diagnostics(self):
+        vcs = [self.vel] + list(self.space)
+        print 'foref diagnostics:'
+        print np.array([[v*u for v in vcs] for u in vcs])
+        #print [[v*u for v in vcs] for u in vcs]
+        print ''
+    
+    def fix(self):
+        base = gram_schmidt([self.vel]+self.space)
+        self.vel, self.space = base[0], base[1:]
