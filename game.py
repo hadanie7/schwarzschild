@@ -10,6 +10,15 @@ import numpy as np
 import pygame
 import graphics_transform as trans
 
+def load_image(name):
+    try:
+        return pygame.image.load(name)
+    except pygame.error:
+        from PIL import Image
+        img_pil = Image.open(name)
+        img_pars = img_pil.tostring(), img_pil.size, img_pil.mode
+        return pygame.image.fromstring(*img_pars)
+        
 class Game:
     fuel_mass = 0.001
     fuel_energy = 0.001
@@ -113,7 +122,7 @@ class GameDrawer:
         
         me.trace = []
         
-        me.picture = pygame.image.load('gravitilrocket.png')
+        me.picture = load_image('gravitilrocket.png')
         
         me.use_pic = True
         
