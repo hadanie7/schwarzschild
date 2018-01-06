@@ -77,7 +77,7 @@ class lin_map:
         self.pt1 = pt1
         self.pt2 = pt2
         self.q = np.array(q)
-        assert self.q.shape == (pt1.man.dim,)*2
+        assert self.q.shape == (pt2.man.dim,pt1.man.dim)
     
     def __call__(self, v):
         assert isinstance(v, vector)
@@ -112,7 +112,7 @@ class manifold:
     def get_vec_by_coords(self, pt, q):
         return pt.get_vector(q)
     
-    def christ(self, pt, i, j, k):
+    def christ(self, pt):
         NotImplemented #virtual
     
     def gram(self, pt):
@@ -154,7 +154,7 @@ class manifold:
     def get_parallel_transport(self, dt):
         assert isinstance(dt, vector)
         D = -np.tensordot(self.christ(dt.pt), dt.q, (1, 0))
-        tq = np.diag(np.ones(self.dim)) + D
+        tq = np.eye(self.dim) + D
         npt = point(self, dt.pt.q + dt.q)
 
         return lin_map(dt.pt, npt, tq)
