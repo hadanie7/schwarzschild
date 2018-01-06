@@ -174,6 +174,7 @@ class GameDrawer:
             
         if me.use_pic:
             x,y = me.game.get_ss_dirc() / 41
+            x = -x
             transform = trans.compose_transform(x,y)
             img = trans.apply_transform(me.picture, transform)
             w,h = img.get_size()
