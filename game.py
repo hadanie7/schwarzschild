@@ -97,7 +97,7 @@ class Game:
         sd = np.sin(me.angle)*x + np.cos(me.angle)*y
         fr -= (fr*t)/(v*t)*v
         sd -= (sd*t)/(v*t)*v
-        return me.v_to_cart(fr),me.v_to_cart(sd)
+        return np.array([me.v_to_cart(fr),me.v_to_cart(sd)])
         
         
 
@@ -115,7 +115,7 @@ class GameDrawer:
         
         me.picture = pygame.image.load('gravitilrocket.png')
         
-        me.use_pic = False
+        me.use_pic = True
         
     def convert(me,game_p):
         cent = np.array([me.upper.sw/2,me.upper.sh/2])
@@ -173,7 +173,7 @@ class GameDrawer:
             me.trace.append(me.convert(p))
             
         if me.use_pic:
-            x,y = me.game.get_ss_dirc() / 41
+            x,y = -me.game.get_ss_dirc()
             x = -x
             transform = trans.compose_transform(x,y)
             img = trans.apply_transform(me.picture, transform)
