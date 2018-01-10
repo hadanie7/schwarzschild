@@ -155,7 +155,7 @@ class manifold:
         assert isinstance(dt, vector)
         D = -np.tensordot(self.christ(dt.pt), dt.q, (1, 0))
         tq = np.eye(self.dim) + D
-        npt = point(self, dt.pt.q + dt.q)
+        npt = point(self, dt.pt.q + np.dot(tq, dt.q))
 
         return lin_map(dt.pt, npt, tq)
     
