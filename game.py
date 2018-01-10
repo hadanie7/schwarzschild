@@ -49,6 +49,15 @@ class Game:
         
         me.angle = 0
         
+        ##light
+        rads = np.concatenate((1.5+np.logspace(-16, 2, 100), 1.5-np.logspace(-16, np.log10(0.49), 100)
+        ))*me.S.rs
+        me.light_parts = []
+        for rad in rads:
+            x0 = me.S.get_point_by_coords([rad, np.pi/2, 0, 0])
+            g = np.diagonal(me.S.gram(x0))
+            dirc = me.S.get_vec_by_coords(x0, [0, 0, np.sqrt(-g[3]/g[2]), 1.])
+            me.light_parts.append(dynamics.body(dirc))
         
     
     def engine(me):
@@ -68,6 +77,9 @@ class Game:
         me.angle += np.deg2rad(side) * 3
     def advance(me, time):
         me.spaceship.advance(time,'self')
+        for lt in me.light_parts:
+            lt.advance(me.S.get_coords(me.spaceship.get_pt())[3] - me.S.get_coords(lt.get_pt())[3]
+                          ,'coord')#time, 'coord')
         fr = set()
         for p in me.fuel_parts:
             if me.fuel_parts[p] == 0:
@@ -172,6 +184,10 @@ class GameDrawer:
         me.upper.scr.fill((150,150,150))
         pygame.draw.circle(me.upper.scr, (0,0,0), me.convert(np.zeros(2)), me.s_rad)
         pygame.draw.circle(me.upper.scr, (255,255,0), me.convert(np.zeros(2)), int(me.s_rad*1.5), 1)
+        
+        for lt in me.game.light_parts:
+            ps = me.convert(me.game.p_to_cart(lt.get_pt()))
+            pygame.draw.circle(me.upper.scr, (255,255,100), ps, 3)
         
         p = me.game.ss_coords()
         

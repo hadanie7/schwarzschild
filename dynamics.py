@@ -12,7 +12,8 @@ class body:
         assert isinstance(P, vector)
         self.P = P
         self.man = P.pt.man
-        assert P.is_timelike()
+        if P.sq() > 1e-8: #not P.is_timelike():
+            raise Exception('making object that is not timelike <x,x>={}'.format(P.sq()))
     
     def shoot(self, Ps):
         assert Ps.pt is self.get_pt()
