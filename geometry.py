@@ -8,7 +8,18 @@ Created on Tue Dec 13 21:59:57 2016
 import numpy as np
 
 class point:
-    def __init__(self, man, q):
+    def __init__(self, man, q, diff_ref = None):
+        if diff_ref is not None:
+            diff_ref[0] = np.eye(man.dim)
+        bd = None
+        while True:
+            alt = man.get_alter(q, bd)
+            if alt == None:
+                break
+            man, q, diff2, bd = alt
+            if diff_ref is not None:
+                diff_ref[0] = np.dot(diff2, diff_ref[0])
+
         self.man = man
         self.q = np.array(q)
     
@@ -118,6 +129,23 @@ class manifold:
     def gram(self, pt):
         NotImplemented #virtual
     
+    def badness(self, q):
+        """badness of this coordinate system in representing the given point.
+        a difference grater than 1 will trigger switching to another manifold"""
+        NotImplemented #vitual
+    
+    def get_alter(self, q, b = None):
+        """given a coordinate, decides whether to move to another manifold or not.
+        if not return None, otherwise returns: man, q, diff, bd
+        man - the new manifold
+        q - the new coordinate
+        diff - differential of map from old to new manifold
+        bd - badness of new coordinate
+        inputs:
+        q - old coordinate
+        b - optional badness of q, just to save computation"""
+        NotImplemented #vitual
+    
     def dif_scale(self, v, d):
         NotImplemented #virtual
 
@@ -155,9 +183,10 @@ class manifold:
         assert isinstance(dt, vector)
         D = -np.tensordot(self.christ(dt.pt), dt.q, (1, 0))
         tq = np.eye(self.dim) + D
-        npt = point(self, dt.pt.q + np.dot(tq, dt.q))
+        diff = [None]
+        npt = point(self, dt.pt.q + np.dot(tq, dt.q), diff)
 
-        return lin_map(dt.pt, npt, tq)
+        return lin_map(dt.pt, npt, np.dot(diff[0],tq))
     
     def inner_product(self, v1, v2):
         assert isinstance(v1, vector); assert isinstance(v2, vector)
@@ -173,7 +202,13 @@ class schwarzschild(manifold):
         self.G = G
         self.m = m
         self.rs = 2*G*m
-        
+    
+    def badness(self, q):
+        return 0
+    
+    def get_alter(self, q, b):
+        None
+    
     def christ2(self, pt, i, j, k):
         r, th, ph, t = pt.q
         B = -(1-self.rs/r)
